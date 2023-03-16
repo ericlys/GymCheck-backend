@@ -10,7 +10,7 @@ export class InMemoryCheckInsRepository implements CheckInsRepository {
     const checkIn = {
       id: randomUUID(),
       user_id: data.user_id,
-      gym_id: data.user_id,
+      gym_id: data.gym_id,
       validated_at: data.validated_at ? new Date(data.validated_at) : null,
       created_at: new Date(),
     }
@@ -33,5 +33,11 @@ export class InMemoryCheckInsRepository implements CheckInsRepository {
     })
 
     return checkOnSameDate ?? null
+  }
+
+  async findManyByUserId(userId: string, page: number) {
+    return this.items
+      .filter((checkIn) => checkIn.user_id === userId)
+      .slice((page - 1) * 20, page * 20)
   }
 }
