@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeEach } from 'vitest'
+import { expect, describe, it, beforeEach, vi, afterEach } from 'vitest'
 import { InMemoryCheckInsRepository } from '@/repositories/in-memory/in-memory-check-ins-repository'
 import { ValidateCheckInUseCase } from './validate-check-in'
 import { ResourceNotFoundError } from './erros/resource-not-found-error'
@@ -11,21 +11,12 @@ describe('Validate Check-in Use Case', () => {
     checkInsRepository = new InMemoryCheckInsRepository()
     sut = new ValidateCheckInUseCase(checkInsRepository)
 
-    // await gymsRepository.create({
-    //   id: 'gym-01',
-    //   title: 'Javascript Gym',
-    //   description: '',
-    //   latitude: -6.886675,
-    //   longitude: -38.548721,
-    //   phone: '',
-    // })
-
-    // vi.useFakeTimers()
+    vi.useFakeTimers() // mocking data to solve false positive
   })
 
-  // afterEach(() => {
-  //   vi.useRealTimers()
-  // })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
   it('should be able to validate check-in ', async () => {
     const createdCheckIn = await checkInsRepository.create({
@@ -47,5 +38,23 @@ describe('Validate Check-in Use Case', () => {
         checkInId: 'inexistent-check-in-id',
       }),
     ).rejects.toBeInstanceOf(ResourceNotFoundError)
+  })
+
+  it('should not be able to validate the check-in after 20 minutes after creation', async () => {
+    vi.setSystemTime(new Date(2023, 3, 1, 13, 40))
+
+    const createdCheckIn = await checkInsRepository.create({
+      gym_id: 'gym-01',
+      user_id: 'user_01',
+    })
+
+    const twentyOneMinutesInMs = 1000 * 60 * 21
+    vi.advanceTimersByTime(twentyOneMinutesInMs)
+
+    await expect(() =>
+      sut.execute({
+        checkInId: createdCheckIn.id,
+      }),
+    ).rejects.toBeInstanceOf(Error)
   })
 })

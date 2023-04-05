@@ -1,5 +1,7 @@
 import { CheckInsRepository } from '@/repositories/check-ins-repository'
 import { CheckIn } from '@prisma/client'
+import dayjs from 'dayjs'
+import { LateCheckInValidationError } from './erros/late-check-in-validation-error'
 import { ResourceNotFoundError } from './erros/resource-not-found-error'
 
 interface ValidateCheckInUseCaseRequest {
@@ -20,6 +22,15 @@ export class ValidateCheckInUseCase {
 
     if (!checkIn) {
       throw new ResourceNotFoundError()
+    }
+
+    const distanceInMinutesFromCheckInCreated = dayjs(new Date()).diff(
+      checkIn.created_at,
+      'minutes',
+    )
+
+    if (distanceInMinutesFromCheckInCreated > 20) {
+      throw new LateCheckInValidationError()
     }
 
     checkIn.validated_at = new Date()
