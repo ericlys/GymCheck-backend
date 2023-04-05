@@ -6,6 +6,12 @@ import { CheckInsRepository } from '../check-ins-repository'
 export class InMemoryCheckInsRepository implements CheckInsRepository {
   public items: CheckIn[] = []
 
+  async findById(id: string) {
+    const checkIn = this.items.find((item) => item.id === id)
+
+    return checkIn ?? null
+  }
+
   async create(data: Prisma.CheckInUncheckedCreateInput): Promise<CheckIn> {
     const checkIn = {
       id: randomUUID(),
@@ -43,5 +49,15 @@ export class InMemoryCheckInsRepository implements CheckInsRepository {
 
   async countByUserId(userId: string): Promise<number> {
     return this.items.filter((checkIn) => checkIn.user_id === userId).length
+  }
+
+  async save(checkIn: CheckIn) {
+    const checkInIndex = this.items.findIndex((item) => item.id === checkIn.id)
+
+    if (checkInIndex >= 0) {
+      this.items[checkInIndex] = checkIn
+    }
+
+    return checkIn
   }
 }
